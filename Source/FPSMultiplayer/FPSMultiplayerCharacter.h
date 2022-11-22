@@ -13,6 +13,7 @@ class UCameraComponent;
 class UMotionControllerComponent;
 class UAnimMontage;
 class USoundBase;
+class AFPSWeapon;
 
 UCLASS(config = Game)
 class AFPSMultiplayerCharacter : public ACharacter
@@ -26,19 +27,7 @@ class AFPSMultiplayerCharacter : public ACharacter
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 		USkeletalMeshComponent* Mesh2P;
 
-	/** Gun mesh: 1st person view (seen only by self) */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-		USkeletalMeshComponent* FP_Gun;
-
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-		USkeletalMeshComponent* TP_Gun;
-
-	/** Location on gun mesh where projectiles should spawn. */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-		USceneComponent* FP_MuzzleLocation;
-
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-		USceneComponent* TP_MuzzleLocation;
+	USkeletalMeshComponent* CurrentMesh;
 
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -80,6 +69,15 @@ public:
 		uint8 bUsingMotionControllers : 1;
 
 protected:
+
+	//UPROPERTY(Replicated)
+	AFPSWeapon* CurrentWeapon;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+		TSubclassOf<AFPSWeapon> WeaponClass;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = "Weapon")
+		FName WeaponSocketName;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Player")
 		bool bIsFiring;

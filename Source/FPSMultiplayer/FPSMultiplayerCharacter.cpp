@@ -12,6 +12,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "MotionControllerComponent.h"
 #include "XRMotionControllerBase.h" // for FXRMotionControllerBase::RightHandSourceId
+#include "FPSWeapon.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -26,6 +27,8 @@ AFPSMultiplayerCharacter::AFPSMultiplayerCharacter()
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
+
+	WeaponSocketName = "GripPoint";
 
 	// Create a CameraComponent	
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
@@ -44,35 +47,45 @@ AFPSMultiplayerCharacter::AFPSMultiplayerCharacter()
 
 	// Create a mesh component that will be used when being viewed from a '3rd person' view (not locally controlled)
 	Mesh2P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh2P"));
-	Mesh1P->SetOnlyOwnerSee(false);
+	Mesh2P->SetOnlyOwnerSee(false);
 	Mesh2P->SetupAttachment(FirstPersonCameraComponent);
 	Mesh2P->bCastDynamicShadow = true;
 	Mesh2P->CastShadow = true;
 	//Mesh2P->SetRelativeRotation(FRotator(1.9f, -19.19f, 5.2f));
 	//Mesh2P->SetRelativeLocation(FVector(-0.5f, -4.4f, -155.7f));
 
+
+	//FActorSpawnParameters SpawnParams;
+	//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	/*FP_Gun = GetWorld()->SpawnActor<AFPSWeapon>(WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+	if (FP_Gun)
+	{
+		FP_Gun->SetOwner(Mesh1P);
+		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
+	}*/
 	// Create a gun mesh component
-	FP_Gun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FP_Gun"));
-	FP_Gun->SetOnlyOwnerSee(true);			// otherwise won't be visible in the multiplayer
-	FP_Gun->bCastDynamicShadow = false;
-	FP_Gun->CastShadow = false;
-	// FP_Gun->SetupAttachment(Mesh1P, TEXT("GripPoint"));
-	FP_Gun->SetupAttachment(RootComponent);
+	//FP_Gun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FP_Gun"));
+	//FP_Gun->SetOnlyOwnerSee(true);			// otherwise won't be visible in the multiplayer
+	//FP_Gun->bCastDynamicShadow = false;
+	//FP_Gun->CastShadow = false;
+	//// FP_Gun->SetupAttachment(Mesh1P, TEXT("GripPoint"));
+	//FP_Gun->SetupAttachment(RootComponent);
 
 	// Create a gun mesh component
-	TP_Gun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("TP_Gun"));
-	TP_Gun->SetOnlyOwnerSee(false);			// otherwise won't be visible in the multiplayer
-	TP_Gun->bCastDynamicShadow = false;
-	TP_Gun->CastShadow = false;
-	TP_Gun->SetupAttachment(RootComponent);
+	//TP_Gun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("TP_Gun"));
+	//TP_Gun->SetOnlyOwnerSee(false);			// otherwise won't be visible in the multiplayer
+	//TP_Gun->bCastDynamicShadow = false;
+	//TP_Gun->CastShadow = false;
+	//TP_Gun->SetupAttachment(RootComponent);
 	
-	FP_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("FP_MuzzleLocation"));
+	/*FP_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("FP_MuzzleLocation"));
 	FP_MuzzleLocation->SetupAttachment(FP_Gun);
 	FP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
 
 	TP_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("TP_MuzzleLocation"));
 	TP_MuzzleLocation->SetupAttachment(TP_Gun);
-	TP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
+	TP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));*/
 
 	// Default offset from the character location for projectiles to spawn
 	GunOffset = FVector(100.0f, 0.0f, 10.0f);
@@ -92,20 +105,30 @@ void AFPSMultiplayerCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
-
 	if (IsLocallyControlled())
 	{
 		Mesh2P->SetHiddenInGame(true, true);
-		TP_Gun->SetHiddenInGame(true, true);
 		Mesh1P->SetHiddenInGame(false, true);
-		FP_Gun->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
+		CurrentMesh = Mesh1P;
 	}
 	else
 	{
 		Mesh2P->SetHiddenInGame(false, true);
-		TP_Gun->SetHiddenInGame(false, true);
 		Mesh1P->SetHiddenInGame(true, true);
-		TP_Gun->AttachToComponent(Mesh2P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
+		CurrentMesh = Mesh2P;
+	}
+
+	if (WeaponClass)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		CurrentWeapon = GetWorld()->SpawnActor<AFPSWeapon>(WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+		if (CurrentWeapon)
+		{
+			CurrentWeapon->SetOwner(this);
+			CurrentWeapon->AttachToComponent(CurrentMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
+		}
 	}
 }
 
@@ -145,42 +168,10 @@ void AFPSMultiplayerCharacter::SetupPlayerInputComponent(class UInputComponent* 
 
 void AFPSMultiplayerCharacter::OnFire()
 {
-	// try and fire a projectile
-	if (ProjectileClass != nullptr)
-	{
-		bIsFiring = true;
-		UWorld* const World = GetWorld();
-		if (World != nullptr)
-		{
-			const FRotator SpawnRotation = GetControlRotation();
-			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-			const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
+	if (CurrentWeapon)
+		CurrentWeapon->Fire();
 
-			//Set Spawn Collision Handling Override
-			FActorSpawnParameters ActorSpawnParams;
-			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-
-			// spawn the projectile at the muzzle
-			World->SpawnActor<AFPSMultiplayerProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-		}
-	}
-
-	// try and play the sound if specified
-	if (FireSound != nullptr)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-	}
-
-	// try and play a firing animation if specified
-	if (FireAnimation != nullptr)
-	{
-		// Get the animation object for the arms mesh
-		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-		if (AnimInstance != nullptr)
-		{
-			AnimInstance->Montage_Play(FireAnimation, 1.f);
-		}
-	}
+	// TODO play character fire animation
 }
 
 void AFPSMultiplayerCharacter::BeginTouch(const ETouchIndex::Type FingerIndex, const FVector Location)
