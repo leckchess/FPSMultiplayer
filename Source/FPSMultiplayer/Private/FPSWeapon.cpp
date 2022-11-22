@@ -16,8 +16,10 @@ AFPSWeapon::AFPSWeapon()
 	RootComponent = MeshComp;
 
 	MuzzleSocketName = "Muzzle";
-	SmokeEffectTargetName = "BeamEnd";
 	BaseDamage = 20.0f;
+
+	StarterAmmoNumber = 20;
+	CurrentAmmoInClip = StarterAmmoNumber;
 
 	SetReplicates(true);
 
@@ -25,7 +27,7 @@ AFPSWeapon::AFPSWeapon()
 
 void AFPSWeapon::Fire()
 {
-	if (GetWorld() && GetOwner())
+	if (GetWorld() && GetOwner() && CurrentAmmoInClip > 0)
 	{
 		AActor* MyOwner = GetOwner();
 
@@ -40,7 +42,14 @@ void AFPSWeapon::Fire()
 
 		if (ProjectileClass)
 			GetWorld()->SpawnActor<AActor>(ProjectileClass, MuzzleLocation, EyeRotation, SpawnParams);
+
+		CurrentAmmoInClip--;
 	}
+}
+
+void AFPSWeapon::AddAmmo()
+{
+	CurrentAmmoInClip++;
 }
 
 //bool AFPSWeapon::ServerFire_Validate()
@@ -53,63 +62,63 @@ void AFPSWeapon::Fire()
 //	Fire();
 //}
 
-void AFPSWeapon::PlayFireEffects(FVector SmokeTrailEndPoint)
-{
-	if (MuzzleEffect)
-		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, MeshComp, MuzzleSocketName);
-
-	if (SmokeEffect)
-	{
-		FVector MuzzleLocation = MeshComp->GetSocketLocation(MuzzleSocketName);
-		if (UParticleSystemComponent* SmokeTrail = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SmokeEffect, MuzzleLocation))
-		{
-			SmokeTrail->SetVectorParameter(SmokeEffectTargetName, SmokeTrailEndPoint);
-		}
-	}
-
-	if (APawn* MyOwner = Cast<APawn>(GetOwner()))
-	{
-		if (APlayerController* PlayerConroller = Cast<APlayerController>(MyOwner->GetController()))
-		{
-			PlayerConroller->ClientStartCameraShake(FireCameraShake);
-		}
-	}
-}
-
-void AFPSWeapon::PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint)
-{
-	UParticleSystem* SelectedEffect = nullptr;
-
-	switch (SurfaceType)
-	{
-	case SurfaceType1:
-		SelectedEffect = FleshImpactEffect;
-		break;
-
-	case SurfaceType2:
-		SelectedEffect = FleshImpactEffect;
-		break;
-
-	default:
-		SelectedEffect = DefaultImpactEffect;
-		break;
-	}
-
-
-	if (SelectedEffect)
-	{
-		FVector MuzzleLocation = MeshComp->GetSocketLocation(MuzzleSocketName);
-		FVector ShotDirection = ImpactPoint - MuzzleLocation;
-		ShotDirection.Normalize();
-
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SelectedEffect, ImpactPoint, ShotDirection.Rotation());
-	}
-}
+//void AFPSWeapon::PlayFireEffects(FVector SmokeTrailEndPoint)
+//{
+//	if (MuzzleEffect)
+//		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, MeshComp, MuzzleSocketName);
+//
+//	if (SmokeEffect)
+//	{
+//		FVector MuzzleLocation = MeshComp->GetSocketLocation(MuzzleSocketName);
+//		if (UParticleSystemComponent* SmokeTrail = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SmokeEffect, MuzzleLocation))
+//		{
+//			SmokeTrail->SetVectorParameter(SmokeEffectTargetName, SmokeTrailEndPoint);
+//		}
+//	}
+//
+//	if (APawn* MyOwner = Cast<APawn>(GetOwner()))
+//	{
+//		if (APlayerController* PlayerConroller = Cast<APlayerController>(MyOwner->GetController()))
+//		{
+//			PlayerConroller->ClientStartCameraShake(FireCameraShake);
+//		}
+//	}
+//}
+//
+//void AFPSWeapon::PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint)
+//{
+//	UParticleSystem* SelectedEffect = nullptr;
+//
+//	switch (SurfaceType)
+//	{
+//	case SurfaceType1:
+//		SelectedEffect = FleshImpactEffect;
+//		break;
+//
+//	case SurfaceType2:
+//		SelectedEffect = FleshImpactEffect;
+//		break;
+//
+//	default:
+//		SelectedEffect = DefaultImpactEffect;
+//		break;
+//	}
+//
+//
+//	if (SelectedEffect)
+//	{
+//		FVector MuzzleLocation = MeshComp->GetSocketLocation(MuzzleSocketName);
+//		FVector ShotDirection = ImpactPoint - MuzzleLocation;
+//		ShotDirection.Normalize();
+//
+//		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SelectedEffect, ImpactPoint, ShotDirection.Rotation());
+//	}
+//}
 
 //void AFPSWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 //{
 //	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-//	DOREPLIFETIME_CONDITION(ATPMWeapon, HitScanTrace, COND_SkipOwner);
+//	DOREPLIFETIME_CONDITION(AFPSWeapon, HitScanTrace, COND_SkipOwner);
 //}
 //
 //void AFPSWeapon::OnRip_HitScanTrace()

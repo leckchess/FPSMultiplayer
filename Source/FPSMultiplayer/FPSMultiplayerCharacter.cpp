@@ -13,6 +13,7 @@
 #include "MotionControllerComponent.h"
 #include "XRMotionControllerBase.h" // for FXRMotionControllerBase::RightHandSourceId
 #include "FPSWeapon.h"
+#include "FPSHealthComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -51,41 +52,9 @@ AFPSMultiplayerCharacter::AFPSMultiplayerCharacter()
 	Mesh2P->SetupAttachment(FirstPersonCameraComponent);
 	Mesh2P->bCastDynamicShadow = true;
 	Mesh2P->CastShadow = true;
-	//Mesh2P->SetRelativeRotation(FRotator(1.9f, -19.19f, 5.2f));
-	//Mesh2P->SetRelativeLocation(FVector(-0.5f, -4.4f, -155.7f));
 
-
-	//FActorSpawnParameters SpawnParams;
-	//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	/*FP_Gun = GetWorld()->SpawnActor<AFPSWeapon>(WeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
-	if (FP_Gun)
-	{
-		FP_Gun->SetOwner(Mesh1P);
-		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
-	}*/
-	// Create a gun mesh component
-	//FP_Gun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FP_Gun"));
-	//FP_Gun->SetOnlyOwnerSee(true);			// otherwise won't be visible in the multiplayer
-	//FP_Gun->bCastDynamicShadow = false;
-	//FP_Gun->CastShadow = false;
-	//// FP_Gun->SetupAttachment(Mesh1P, TEXT("GripPoint"));
-	//FP_Gun->SetupAttachment(RootComponent);
-
-	// Create a gun mesh component
-	//TP_Gun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("TP_Gun"));
-	//TP_Gun->SetOnlyOwnerSee(false);			// otherwise won't be visible in the multiplayer
-	//TP_Gun->bCastDynamicShadow = false;
-	//TP_Gun->CastShadow = false;
-	//TP_Gun->SetupAttachment(RootComponent);
-	
-	/*FP_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("FP_MuzzleLocation"));
-	FP_MuzzleLocation->SetupAttachment(FP_Gun);
-	FP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
-
-	TP_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("TP_MuzzleLocation"));
-	TP_MuzzleLocation->SetupAttachment(TP_Gun);
-	TP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));*/
+	HealthComponent = CreateDefaultSubobject<UFPSHealthComponent>(TEXT("HealthComp"));
+	HealthComponent->OnHealthChanged.AddDynamic(this, &AFPSMultiplayerCharacter::OnPlayerHealthChanged);
 
 	// Default offset from the character location for projectiles to spawn
 	GunOffset = FVector(100.0f, 0.0f, 10.0f);
@@ -252,4 +221,22 @@ bool AFPSMultiplayerCharacter::EnableTouchscreenMovement(class UInputComponent* 
 	}
 	
 	return false;
+}
+
+void AFPSMultiplayerCharacter::OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
+{
+	if (Health <= 0 && !bIsDead)
+	{
+		bIsDead = true;
+
+		if (GetMovementComponent())
+			GetMovementComponent()->StopMovementImmediately();
+
+		if (GetCapsuleComponent())
+			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		DetachFromControllerPendingDestroy();
+
+		SetLifeSpan(10.0f);
+	}
 }

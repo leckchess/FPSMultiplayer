@@ -29,6 +29,8 @@ UCLASS()
 class FPSMULTIPLAYER_API AFPSWeapon : public AActor
 {
 	GENERATED_BODY()
+
+	int CurrentAmmoInClip;
 	
 public:	
 	// Sets default values for this actor's properties
@@ -40,7 +42,7 @@ protected:
 		USkeletalMeshComponent* MeshComp;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
-		TSubclassOf<UDamageType> DamageType;
+		int StarterAmmoNumber;;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		float BaseDamage;
@@ -48,7 +50,7 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		FName MuzzleSocketName;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
+	/*UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
 		UParticleSystem* MuzzleEffect;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
 		UParticleSystem* DefaultImpactEffect;
@@ -59,7 +61,7 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Effects")
 		FName SmokeEffectTargetName;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
-		TSubclassOf<UCameraShakeBase> FireCameraShake;
+		TSubclassOf<UCameraShakeBase> FireCameraShake;*/
 
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
 		TSubclassOf<AActor> ProjectileClass;
@@ -70,10 +72,10 @@ protected:
 	/*UFUNCTION(Server, Reliable, WithValidation)
 		void ServerFire();*/
 	
-	void PlayFireEffects(FVector SmokeTrailEndPoint);
-	void PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint);
+	/*void PlayFireEffects(FVector SmokeTrailEndPoint);
+	void PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint);*/
 
 public:
 	void Fire();
-
+	void AddAmmo();
 };

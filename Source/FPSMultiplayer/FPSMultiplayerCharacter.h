@@ -14,6 +14,7 @@ class UMotionControllerComponent;
 class UAnimMontage;
 class USoundBase;
 class AFPSWeapon;
+class UFPSHealthComponent;
 
 UCLASS(config = Game)
 class AFPSMultiplayerCharacter : public ACharacter
@@ -72,6 +73,8 @@ protected:
 
 	//UPROPERTY(Replicated)
 	AFPSWeapon* CurrentWeapon;
+
+	UFPSHealthComponent* HealthComponent;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 		TSubclassOf<AFPSWeapon> WeaponClass;
@@ -133,6 +136,9 @@ protected:
 	 * @returns true if touch controls were enabled.
 	 */
 	bool EnableTouchscreenMovement(UInputComponent* InputComponent);
+
+	UFUNCTION()
+		void OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
 public:
 	/** Returns Mesh1P subobject **/
