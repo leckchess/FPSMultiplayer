@@ -38,23 +38,16 @@ AFPSMultiplayerCharacter::AFPSMultiplayerCharacter()
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
 
 	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
-	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
-	Mesh1P->SetOnlyOwnerSee(true);
-	Mesh1P->SetupAttachment(FirstPersonCameraComponent);
-	Mesh1P->bCastDynamicShadow = false;
-	Mesh1P->CastShadow = false;
-	Mesh1P->SetRelativeRotation(FRotator(1.9f, -19.19f, 5.2f));
-	Mesh1P->SetRelativeLocation(FVector(-0.5f, -4.4f, -155.7f));
+	FPSMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterFPSMesh"));
+	FPSMesh->SetOnlyOwnerSee(true);
+	FPSMesh->SetupAttachment(FirstPersonCameraComponent);
+	FPSMesh->bCastDynamicShadow = false;
+	FPSMesh->CastShadow = false;
+	FPSMesh->SetRelativeRotation(FRotator(1.9f, -19.19f, 5.2f));
+	FPSMesh->SetRelativeLocation(FVector(-0.5f, -4.4f, -155.7f));
 
-	// Create a mesh component that will be used when being viewed from a '3rd person' view (not locally controlled)
-	Mesh2P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh2P"));
-	Mesh2P->SetOnlyOwnerSee(false);
-	Mesh2P->SetupAttachment(FirstPersonCameraComponent);
-	Mesh2P->bCastDynamicShadow = true;
-	Mesh2P->CastShadow = true;
-
-	HealthComponent = CreateDefaultSubobject<UFPSHealthComponent>(TEXT("HealthComp"));
-	HealthComponent->OnHealthChanged.AddDynamic(this, &AFPSMultiplayerCharacter::OnPlayerHealthChanged);
+	PlayerHealthComponent = CreateDefaultSubobject<UFPSHealthComponent>(TEXT("PlayerHealthComp"));
+	PlayerHealthComponent->OnHealthChanged.AddDynamic(this, &AFPSMultiplayerCharacter::OnPlayerHealthChanged);
 
 	// Default offset from the character location for projectiles to spawn
 	GunOffset = FVector(100.0f, 0.0f, 10.0f);
@@ -76,15 +69,15 @@ void AFPSMultiplayerCharacter::BeginPlay()
 
 	if (IsLocallyControlled())
 	{
-		Mesh2P->SetHiddenInGame(true, true);
-		Mesh1P->SetHiddenInGame(false, true);
-		CurrentMesh = Mesh1P;
+		GetMesh()->SetHiddenInGame(true, true);
+		FPSMesh->SetHiddenInGame(false, true);
+		CurrentMesh = FPSMesh;
 	}
 	else
 	{
-		Mesh2P->SetHiddenInGame(false, true);
-		Mesh1P->SetHiddenInGame(true, true);
-		CurrentMesh = Mesh2P;
+		GetMesh()->SetHiddenInGame(false, true);
+		FPSMesh->SetHiddenInGame(true, true);
+		CurrentMesh = GetMesh();
 	}
 
 	if (WeaponClass)
@@ -225,12 +218,15 @@ bool AFPSMultiplayerCharacter::EnableTouchscreenMovement(class UInputComponent* 
 
 void AFPSMultiplayerCharacter::OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
+	// respawn after a while
 	if (Health <= 0 && !bIsDead)
 	{
+		UE_LOG(LogTemp, Log, TEXT("Current Health %f DEAAD"), Health);
+
 		bIsDead = true;
 
-		if (GetMovementComponent())
-			GetMovementComponent()->StopMovementImmediately();
+		if (GetCharacterMovement())
+			GetCharacterMovement()->StopMovementImmediately();
 
 		if (GetCapsuleComponent())
 			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);

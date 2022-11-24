@@ -8,7 +8,7 @@
 UFPSHealthComponent::UFPSHealthComponent()
 {
 	MaxHealth = 100;
-	SetIsReplicated(true);
+	//SetIsReplicated(true);
 }
 
 // Called when the game starts
@@ -18,7 +18,7 @@ void UFPSHealthComponent::BeginPlay()
 
 	if (AActor* MyOwner = GetOwner())
 	{
-		if (GetOwnerRole() == ROLE_Authority)
+		//if (GetOwnerRole() == ROLE_Authority)
 		{
 			MyOwner->OnTakeAnyDamage.AddDynamic(this, &UFPSHealthComponent::HandleTakeAnyDamage);
 		}

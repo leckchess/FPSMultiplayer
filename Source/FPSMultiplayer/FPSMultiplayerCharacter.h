@@ -23,10 +23,7 @@ class AFPSMultiplayerCharacter : public ACharacter
 
 		/** Pawn mesh: 1st person view (arms; seen only by self) */
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-		USkeletalMeshComponent* Mesh1P;
-
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-		USkeletalMeshComponent* Mesh2P;
+		USkeletalMeshComponent* FPSMesh;
 
 	USkeletalMeshComponent* CurrentMesh;
 
@@ -74,7 +71,9 @@ protected:
 	//UPROPERTY(Replicated)
 	AFPSWeapon* CurrentWeapon;
 
-	UFPSHealthComponent* HealthComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Health")
+		UFPSHealthComponent* PlayerHealthComponent;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 		TSubclassOf<AFPSWeapon> WeaponClass;
@@ -141,8 +140,8 @@ protected:
 		void OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
 public:
-	/** Returns Mesh1P subobject **/
-	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
+	/** Returns FPSMesh subobject **/
+	USkeletalMeshComponent* GetFPSMesh() const { return FPSMesh; }
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
