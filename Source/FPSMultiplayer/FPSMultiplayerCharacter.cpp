@@ -131,7 +131,19 @@ void AFPSMultiplayerCharacter::SetupPlayerInputComponent(class UInputComponent* 
 void AFPSMultiplayerCharacter::OnFire()
 {
 	if (CurrentWeapon)
+	{
 		CurrentWeapon->Fire();
+
+		if (APlayerController* PlayerConroller = Cast<APlayerController>(GetController()))
+		{
+			PlayerConroller->ClientStartCameraShake(FireCameraShake);
+		}
+
+		if (FireSound != nullptr)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+		}
+	}
 
 	// TODO play character fire animation
 }

@@ -2,6 +2,8 @@
 
 #include "FPSMultiplayerProjectile.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Kismet/GamePlayStatics.h"
+#include "TimerManager.h"
 #include "Components/SphereComponent.h"
 
 AFPSMultiplayerProjectile::AFPSMultiplayerProjectile() 
@@ -27,9 +29,35 @@ AFPSMultiplayerProjectile::AFPSMultiplayerProjectile()
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = true;
 
+	AnimationExplosionTime = 3;
+	PlayerExplosionTime = 4;
+	DefaultExplosionTime = 8;
+
+	ExplosionSpeedParameterName = "Frequency";
 	// Die after 3 seconds by default
 	InitialLifeSpan = 3.0f;
 }
+
+void AFPSMultiplayerProjectile::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().SetTimer(ExplosionAnimationDelay_TimeHandler, this, &AFPSMultiplayerProjectile::Blink, DefaultExplosionTime - AnimationExplosionTime, true);
+	}
+}
+
+void AFPSMultiplayerProjectile::Tick(float DeltaTime)
+{
+	if (ExplosionDynamicMaterial && GetWorld()->GetTimerManager().IsTimerActive(ExplosionDelay_TimeHandler))
+	{
+
+		ExplosionSpeedParameterValue += (DeltaTime / AnimationExplosionTime);
+		ExplosionDynamicMaterial->SetScalarParameterValue(ExplosionSpeedParameterName, ExplosionSpeedParameterValue);
+	}
+}
+
 
 void AFPSMultiplayerProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
@@ -38,7 +66,53 @@ void AFPSMultiplayerProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* Othe
 	{
 		if (OtherComp->IsSimulatingPhysics())
 			OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
-		else if (OtherActor->IsA(AActor::GetClass()))
-			Destroy();
+		else if (OtherActor->IsA(AActor::GetClass()) && GetWorld())
+		{
+			// attach to player
+			if (GetWorld()->GetTimerManager().IsTimerActive(ExplosionAnimationDelay_TimeHandler) && GetWorld()->GetTimerManager().GetTimerRemaining(ExplosionAnimationDelay_TimeHandler) > PlayerExplosionTime)
+			{
+				GetWorld()->GetTimerManager().ClearTimer(ExplosionAnimationDelay_TimeHandler);
+				GetWorld()->GetTimerManager().SetTimer(ExplosionAnimationDelay_TimeHandler, this, &AFPSMultiplayerProjectile::Blink, PlayerExplosionTime - AnimationExplosionTime, true);
+			}
+		}
+	}
+}
+
+void AFPSMultiplayerProjectile::Blink()
+{
+	if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(GetComponentByClass(UStaticMeshComponent::StaticClass())))
+	{
+		ExplosionDynamicMaterial = StaticMeshComp->CreateDynamicMaterialInstance(0, ExploadingMaterialInstance);
+
+		if (GetWorld()->GetTimerManager().IsTimerActive(ExplosionDelay_TimeHandler))
+			GetWorld()->GetTimerManager().ClearTimer(ExplosionDelay_TimeHandler);
+
+		ExplosionSpeedParameterValue = 0;
+		GetWorld()->GetTimerManager().SetTimer(ExplosionDelay_TimeHandler, this, &AFPSMultiplayerProjectile::Expload, AnimationExplosionTime, true);
+	}
+}
+
+void AFPSMultiplayerProjectile::Expload()
+{
+	TArray<AActor*> IgnoreActors;
+	IgnoreActors.Add(GetOwner());
+
+	UGameplayStatics::ApplyRadialDamage(GetWorld(), Damage, GetActorLocation(), DamageRadius, DamageType, IgnoreActors);
+
+	if (ExplosionEffect)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation(), GetActorRotation());
+	}
+
+	Destroy();
+}
+
+void AFPSMultiplayerProjectile::PickUp()
+{
+	// give t to the player + ammo
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(ExplosionAnimationDelay_TimeHandler);
+		GetWorld()->GetTimerManager().ClearTimer(ExplosionDelay_TimeHandler);
 	}
 }

@@ -21,7 +21,7 @@ AFPSWeapon::AFPSWeapon()
 	StarterAmmoNumber = 20;
 	CurrentAmmoInClip = StarterAmmoNumber;
 
-	SetReplicates(true);
+	//SetReplicates(true);
 
 }
 
@@ -41,7 +41,10 @@ void AFPSWeapon::Fire()
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 		if (ProjectileClass)
-			GetWorld()->SpawnActor<AActor>(ProjectileClass, MuzzleLocation, EyeRotation, SpawnParams);
+		{
+			AActor* Proj = GetWorld()->SpawnActor<AActor>(ProjectileClass, MuzzleLocation, EyeRotation, SpawnParams);
+			Proj->SetOwner(MyOwner);
+		}
 
 		CurrentAmmoInClip--;
 	}

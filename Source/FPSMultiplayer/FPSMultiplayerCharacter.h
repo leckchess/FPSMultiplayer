@@ -31,6 +31,8 @@ class AFPSMultiplayerCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		UCameraComponent* FirstPersonCameraComponent;
 
+	UUserWidget* HUD;
+
 public:
 	AFPSMultiplayerCharacter();
 
@@ -65,6 +67,9 @@ public:
 	/** Whether to use motion controller location for aiming. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 		uint8 bUsingMotionControllers : 1;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Fire")
+		TSubclassOf<UCameraShakeBase> FireCameraShake;
 
 protected:
 
@@ -144,6 +149,11 @@ public:
 	USkeletalMeshComponent* GetFPSMesh() const { return FPSMesh; }
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+
+	UUserWidget* GetHUD() { return HUD; }
+
+	UFUNCTION(BlueprintCallable)
+		void SetHUD(UUserWidget* InHUD) { HUD = InHUD; }
 
 };
 

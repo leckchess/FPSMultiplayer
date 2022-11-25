@@ -8,9 +8,6 @@
 
 
 class USkeletalMeshComponent;
-class UDamageType;
-class UParticleSystem;
-class UCameraShakeBase;
 
 USTRUCT()
 struct FHitScanTrace
@@ -49,20 +46,7 @@ protected:
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		FName MuzzleSocketName;
-
-	/*UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
-		UParticleSystem* MuzzleEffect;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
-		UParticleSystem* DefaultImpactEffect;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
-		UParticleSystem* FleshImpactEffect;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
-		UParticleSystem* SmokeEffect;
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Effects")
-		FName SmokeEffectTargetName;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
-		TSubclassOf<UCameraShakeBase> FireCameraShake;*/
-
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
 		TSubclassOf<AActor> ProjectileClass;
 
