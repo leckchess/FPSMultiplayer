@@ -6,12 +6,28 @@
 #include "Blueprint/UserWidget.h"
 #include "FPSHUD.generated.h"
 
-/**
- * 
- */
+class UFPSHealthIndicator;
+class AFPSWeapon;
+class UTextBlock;
+
 UCLASS()
 class FPSMULTIPLAYER_API UFPSHUD : public UUserWidget
 {
 	GENERATED_BODY()
-	
+
+public:
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+		UTextBlock* AmmoCount_Text;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+		UFPSHealthIndicator* HealthIndicator_WBP;
+
+protected:
+
+	virtual bool Initialize() override;
+
+	UFUNCTION()
+		void OnAmmoChanged(AFPSWeapon* Weapon, int AmmoCount);
+
 };

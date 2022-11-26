@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "FPSWeapon.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoChangedSignature, AFPSWeapon*, Weapon, int, AmmoCount);
 
 class USkeletalMeshComponent;
 
@@ -27,9 +28,9 @@ class FPSMULTIPLAYER_API AFPSWeapon : public AActor
 {
 	GENERATED_BODY()
 
-	int CurrentAmmoInClip;
-	
-public:	
+		int CurrentAmmoInClip;
+
+public:
 	// Sets default values for this actor's properties
 	AFPSWeapon();
 
@@ -40,26 +41,31 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		int StarterAmmoNumber;;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		float BaseDamage;
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		FName MuzzleSocketName;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
 		TSubclassOf<AActor> ProjectileClass;
 
 	/*UPROPERTY(ReplicatedUsing = OnRip_HitScanTrace)
 		FHitScanTrace HitScanTrace;*/
 
-	/*UFUNCTION(Server, Reliable, WithValidation)
-		void ServerFire();*/
-	
-	/*void PlayFireEffects(FVector SmokeTrailEndPoint);
-	void PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint);*/
+		/*UFUNCTION(Server, Reliable, WithValidation)
+			void ServerFire();*/
+
+			/*void PlayFireEffects(FVector SmokeTrailEndPoint);
+			void PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint);*/
 
 public:
 	void Fire();
 	void AddAmmo();
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+		FOnAmmoChangedSignature OnAmmoChanged;
+
+	int GetCurrentAmmoInClip() { return CurrentAmmoInClip; }
 };

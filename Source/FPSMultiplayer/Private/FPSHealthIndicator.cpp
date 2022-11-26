@@ -3,17 +3,33 @@
 
 #include "FPSHealthIndicator.h"
 //#include "FPSMultiplayerCharacter.h"
+#include "FPSHealthComponent.h"
+#include "Components\Image.h"
 
-void UFPSHealthIndicator::BeginPlay()
-{
-	//if (AFPSMultiplayerCharacter* PlayerCharacter = Cast<AFPSMultiplayerCharacter>(GetOwningPlayerPawn()))
-	{
-
-	}
-	//PlayerHealthComponent->OnHealthChanged.AddDynamic(this, &AFPSMultiplayerCharacter::OnPlayerHealthChanged);
-}
+//bool UFPSHealthIndicator::Initialize()
+//{
+//	/*if (AFPSMultiplayerCharacter* PlayerCharacter = Cast<AFPSMultiplayerCharacter>(GetOwningPlayerPawn()))
+//	{
+//		if (!PlayerCharacter->IsDead())
+//		{
+//			if (UFPSHealthComponent* PlayerHealthComp = PlayerCharacter->GetHealthComponent())
+//			{
+//				PlayerHealthComp->OnHealthChanged.AddDynamic(this, &UFPSHealthIndicator::OnPlayerHealthChanged);
+//			}
+//		}
+//	}*/
+//
+//	return Super::Initialize();
+//}
 
 void UFPSHealthIndicator::OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
-	
+	UE_LOG(LogTemp, Log, TEXT("Current Health %f UI"), Health);
+
+	if (HealthImage && HealthComp)
+	{
+		float DeltaHealth = 1 - (Health / HealthComp->GetMaxHealth());
+		DeltaHealth = FMath::Clamp(DeltaHealth, 0.0f, 1.0f);
+		HealthImage->GetDynamicMaterial()->SetScalarParameterValue("Alpha", DeltaHealth);
+	}
 }

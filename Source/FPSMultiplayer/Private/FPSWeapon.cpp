@@ -47,12 +47,15 @@ void AFPSWeapon::Fire()
 		}
 
 		CurrentAmmoInClip--;
+
+		OnAmmoChanged.Broadcast(this, CurrentAmmoInClip);
 	}
 }
 
 void AFPSWeapon::AddAmmo()
 {
 	CurrentAmmoInClip++;
+	OnAmmoChanged.Broadcast(this, CurrentAmmoInClip);
 }
 
 //bool AFPSWeapon::ServerFire_Validate()
