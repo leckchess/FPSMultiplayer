@@ -47,6 +47,8 @@ AFPSMultiplayerProjectile::AFPSMultiplayerProjectile()
 	ExplosionSpeedParameterName = "Frequency";
 	// Die after 3 seconds by default
 	InitialLifeSpan = 3.0f;
+
+	SetReplicates(true);
 }
 
 void AFPSMultiplayerProjectile::BeginPlay()
@@ -95,19 +97,27 @@ void AFPSMultiplayerProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* Othe
 
 void AFPSMultiplayerProjectile::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit)
 {
-	if (OtherActor && OtherActor != this && OtherComponent != nullptr && OtherActor->IsA(AFPSMultiplayerCharacter::StaticClass()))
+	if (OtherActor && OtherActor != this && OtherComponent != nullptr)
 	{
-		if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(GetComponentByClass(UTextRenderComponent::StaticClass())))
+		if (AFPSMultiplayerCharacter* Player = Cast<AFPSMultiplayerCharacter>(OtherActor))
 		{
-			TextRenderComp->SetText(FText::FromString("Press E to Pickup"));
-
-			if (APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager (GetWorld(),0))
+			if (!Player->GetCurrentOverlappedProjectile())
 			{
-				FVector CameraLocation = CameraManager->GetCameraLocation();
-				FVector ProjectileLocation = GetActorLocation();
+				Player->SetCurrentOverlappedProjectile(this);
 
-				FRotator BillboardRotation = UKismetMathLibrary::FindLookAtRotation(ProjectileLocation, CameraLocation);
-				TextRenderComp->SetWorldRotation(BillboardRotation);
+				if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(GetComponentByClass(UTextRenderComponent::StaticClass())))
+				{
+					TextRenderComp->SetText(FText::FromString("Press E to Pickup"));
+
+					if (APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0))
+					{
+						FVector CameraLocation = CameraManager->GetCameraLocation();
+						FVector ProjectileLocation = GetActorLocation();
+
+						FRotator BillboardRotation = UKismetMathLibrary::FindLookAtRotation(ProjectileLocation, CameraLocation);
+						TextRenderComp->SetWorldRotation(BillboardRotation);
+					}
+				}
 			}
 		}
 	}
@@ -115,11 +125,16 @@ void AFPSMultiplayerProjectile::OnBeginOverlap(UPrimitiveComponent* OverlappedCo
 
 void AFPSMultiplayerProjectile::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex)
 {
-	if (OtherActor && OtherActor != this && OtherComponent != nullptr && OtherActor->IsA(AFPSMultiplayerCharacter::StaticClass()))
+	if (OtherActor && OtherActor != this && OtherComponent != nullptr)
 	{
-		if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(GetComponentByClass(UTextRenderComponent::StaticClass())))
+		if (AFPSMultiplayerCharacter* Player = Cast<AFPSMultiplayerCharacter>(OtherActor))
 		{
-			TextRenderComp->SetText(FText::FromString(""));
+			Player->SetCurrentOverlappedProjectile(nullptr);
+
+			if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(GetComponentByClass(UTextRenderComponent::StaticClass())))
+			{
+				TextRenderComp->SetText(FText::FromString(""));
+			}
 		}
 	}
 }
@@ -155,10 +170,11 @@ void AFPSMultiplayerProjectile::Expload()
 
 void AFPSMultiplayerProjectile::PickUp()
 {
-	// give t to the player + ammo
 	if (GetWorld())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(ExplosionAnimationDelay_TimeHandler);
 		GetWorld()->GetTimerManager().ClearTimer(ExplosionDelay_TimeHandler);
+
+		Destroy();
 	}
 }

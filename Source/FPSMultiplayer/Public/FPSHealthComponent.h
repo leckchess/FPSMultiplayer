@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "FPSHealthComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnHealthChangedSignature, UFPSHealthComponent*, HealthComp, float, Health, float, HealthDelta, const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnHealthChangedSignature, class UFPSHealthComponent*, HealthComp, float, Health, float, HealthDelta, const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser);
 
 UCLASS( ClassGroup=(FPS), meta=(BlueprintSpawnableComponent) )
 class FPSMULTIPLAYER_API UFPSHealthComponent : public UActorComponent
@@ -33,8 +33,9 @@ protected:
 
 public:	
 
-	UPROPERTY(BlueprintAssignable, Category = "Events")
-		FOnHealthChangedSignature OnHealthChanged;
+	FOnHealthChangedSignature OnHealthChanged;
 
 	float GetMaxHealth() { return MaxHealth; }
+
+	void ttfunc();
 };

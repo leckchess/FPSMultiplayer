@@ -4,10 +4,11 @@
 #include "FPSHUD.h"
 #include "FPSMultiplayerCharacter.h"
 #include "FPSWeapon.h"
+#include "FPSHealthIndicator.h"
 #include "Components\TextBlock.h"
 
 
-bool UFPSHUD::Initialize()
+void UFPSHUD::Init()
 {
 	if (AFPSMultiplayerCharacter* PlayerCharacter = Cast<AFPSMultiplayerCharacter>(GetOwningPlayerPawn()))
 	{
@@ -24,8 +25,12 @@ bool UFPSHUD::Initialize()
 			}
 		}
 	}
+}
 
-	return Super::Initialize();
+void UFPSHUD::OnHealthUpdated(float Health, float MaxHealth)
+{
+	if (HealthIndicator_WBP)
+		HealthIndicator_WBP->OnHealthUpdated(Health, MaxHealth);
 }
 
 void UFPSHUD::OnAmmoChanged(AFPSWeapon* Weapon, int AmmoCount)
@@ -34,7 +39,5 @@ void UFPSHUD::OnAmmoChanged(AFPSWeapon* Weapon, int AmmoCount)
 	{
 		AmmoCount_Text->SetText(FText::AsNumber(AmmoCount));
 	}
-
-	UE_LOG(LogTemp, Error, TEXT("OnAmmoChanged"));
 }
 

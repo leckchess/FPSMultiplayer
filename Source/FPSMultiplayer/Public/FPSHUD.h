@@ -23,10 +23,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 		UFPSHealthIndicator* HealthIndicator_WBP;
 
+	void Init();
+	void OnHealthUpdated(float Health, float MaxHealth);
+
 protected:
-
-	virtual bool Initialize() override;
-
 	UFUNCTION()
 		void OnAmmoChanged(AFPSWeapon* Weapon, int AmmoCount);
 

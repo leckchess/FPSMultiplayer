@@ -32,10 +32,9 @@ void UFPSHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage
 	if (Damage <= 0)
 		return;
 
-	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
-
 	UE_LOG(LogTemp, Log, TEXT("Current Health %f"), Health);
 
+	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
 	OnHealthChanged.Broadcast(this, Health, Damage, DamageType, InstigatedBy, DamageCauser);
 }
 

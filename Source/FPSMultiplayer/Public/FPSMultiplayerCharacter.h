@@ -15,6 +15,8 @@ class UAnimMontage;
 class USoundBase;
 class AFPSWeapon;
 class UFPSHealthComponent;
+class UFPSHUD;
+class AFPSMultiplayerProjectile;
 
 UCLASS(config = Game)
 class AFPSMultiplayerCharacter : public ACharacter
@@ -31,7 +33,9 @@ class AFPSMultiplayerCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		UCameraComponent* FirstPersonCameraComponent;
 
-	UUserWidget* HUD;
+	UFPSHUD* HUD;
+
+	AFPSMultiplayerProjectile* CurrentOverlappedProjectile;
 
 public:
 	AFPSMultiplayerCharacter();
@@ -73,8 +77,8 @@ public:
 
 protected:
 
-	//UPROPERTY(Replicated)
-	AFPSWeapon* CurrentWeapon;
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeapon)
+		AFPSWeapon* CurrentWeapon;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
 		UFPSHealthComponent* PlayerHealthComponent;
@@ -93,6 +97,8 @@ protected:
 
 	/** Fires a projectile. */
 	void OnFire();
+
+	void Interact();
 
 	/** Handles moving forward/backward */
 	void MoveForward(float Val);
@@ -141,7 +147,7 @@ protected:
 	bool EnableTouchscreenMovement(UInputComponent* InputComponent);
 
 	UFUNCTION()
-		void OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+	void OnRep_CurrentWeapon();
 
 public:
 	/** Returns FPSMesh subobject **/
@@ -149,15 +155,21 @@ public:
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
-	UUserWidget* GetHUD() { return HUD; }
+	UFPSHUD* GetHUD() { return HUD; }
 
 	UFUNCTION(BlueprintCallable)
-		void SetHUD(UUserWidget* InHUD) { HUD = InHUD; }
+		void SetHUD(UFPSHUD* InHUD);
+
+	void SetCurrentOverlappedProjectile(AFPSMultiplayerProjectile* InProjectile) { CurrentOverlappedProjectile = InProjectile; }
+	AFPSMultiplayerProjectile* GetCurrentOverlappedProjectile() { return CurrentOverlappedProjectile; }
 
 	bool IsDead() { return bIsDead; }
 
 	AFPSWeapon* GetCurrentWeapon() { return CurrentWeapon; }
-
 	UFPSHealthComponent* GetHealthComponent() { return PlayerHealthComponent; }
+
+
+	UFUNCTION()
+		void OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 };
 

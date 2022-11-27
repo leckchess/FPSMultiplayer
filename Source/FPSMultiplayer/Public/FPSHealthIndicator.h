@@ -6,7 +6,6 @@
 #include "Blueprint/UserWidget.h"
 #include "FPSHealthIndicator.generated.h"
 
-class UFPSHealthComponent;
 class UImage;
 
 UCLASS()
@@ -18,10 +17,5 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 		UImage* HealthImage;
 
-protected:
-	/*virtual bool Initialize() override;*/
-	
-	UFUNCTION(BlueprintCallable)
-		void OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
-
+	void OnHealthUpdated(float Health, float MaxHealth);
 };
