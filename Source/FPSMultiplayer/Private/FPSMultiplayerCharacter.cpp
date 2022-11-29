@@ -17,6 +17,8 @@
 #include "FPSHealthComponent.h"
 #include "FPSHUD.h"
 #include "Net/UnrealNetwork.h"
+#include "FPSFloatingHPBar.h"
+#include "Components/WidgetComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -46,6 +48,10 @@ AFPSMultiplayerCharacter::AFPSMultiplayerCharacter()
 
 	PlayerHealthComponent = CreateDefaultSubobject<UFPSHealthComponent>(TEXT("PlayerHealthComp"));
 	PlayerHealthComponent->OnHealthChanged.AddDynamic(this, &AFPSMultiplayerCharacter::OnPlayerHealthChanged);
+
+	HPBar_WidgetComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("HP_BarWidget"));
+	HPBar_WidgetComp->SetupAttachment(GetCapsuleComponent());
+	HPBar_WidgetComp->SetIsReplicated(true);
 
 	PlayerHealthComponent->SetIsReplicated(true);
 
@@ -252,6 +258,17 @@ void AFPSMultiplayerCharacter::UpdateHUD_Implementation()
 		return;
 
 	HUD->OnHealthUpdated(GetHealthComponent()->GetCurrentHealth(), GetHealthComponent()->GetMaxHealth());
+
+	// locally bs m7dsh shaifo
+	if (HPBar_WidgetComp)
+	{
+		UFPSFloatingHPBar* Floating_HPWidget = Cast< UFPSFloatingHPBar>(HPBar_WidgetComp->GetUserWidgetObject());
+		if (Floating_HPWidget)
+		{
+			Floating_HPWidget->UpdateHPBar(GetHealthComponent()->GetCurrentHealth(), GetHealthComponent()->GetMaxHealth());
+		}
+	}
+
 }
 
 void AFPSMultiplayerCharacter::SetHUD(UFPSHUD* InHUD)
@@ -265,7 +282,6 @@ void AFPSMultiplayerCharacter::OnPlayerHealthChanged(UFPSHealthComponent* Health
 	if (GetLocalRole() != ROLE_Authority)
 		return;
 
-	
 	if (Health <= 0 && !bIsDead)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Current Health %f DEAAD"), Health);

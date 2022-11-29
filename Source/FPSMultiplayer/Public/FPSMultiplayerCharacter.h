@@ -17,6 +17,8 @@ class AFPSWeapon;
 class UFPSHealthComponent;
 class UFPSHUD;
 class AFPSMultiplayerProjectile;
+class UFPSFloatingHPBar;
+class UWidgetComponent;
 
 UCLASS(config = Game)
 class AFPSMultiplayerCharacter : public ACharacter
@@ -24,11 +26,12 @@ class AFPSMultiplayerCharacter : public ACharacter
 	GENERATED_BODY()
 
 		/** First person camera */
-		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		UCameraComponent* FirstPersonCameraComponent;
 
 	UFPSHUD* HUD;
 	AFPSMultiplayerProjectile* CurrentOverlappedProjectile;
+	UFPSFloatingHPBar* HPBar_Widget;
 
 	FTimerHandle RegainHealth_TimeHandler;
 
@@ -79,6 +82,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
 		UFPSHealthComponent* PlayerHealthComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Health")
+		TSubclassOf<UUserWidget> HPBar_WidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Health")
+		UWidgetComponent* HPBar_WidgetComp;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
 		float RegainHealthColldown;
@@ -175,6 +184,5 @@ public:
 
 	AFPSWeapon* GetCurrentWeapon() { return CurrentWeapon; }
 	UFPSHealthComponent* GetHealthComponent() { return PlayerHealthComponent; }
-
 };
 
