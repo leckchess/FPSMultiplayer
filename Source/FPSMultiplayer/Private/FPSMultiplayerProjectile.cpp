@@ -123,7 +123,6 @@ void AFPSMultiplayerProjectile::OnBeginOverlap(UPrimitiveComponent* OverlappedCo
 			if (!Player->GetCurrentOverlappedProjectile())
 			{
 				Player->SetCurrentOverlappedProjectile(this);
-				//SetOwner(Player);
 
 				if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(GetComponentByClass(UTextRenderComponent::StaticClass())))
 				{
@@ -183,12 +182,12 @@ void AFPSMultiplayerProjectile::Blink()
 	if (GetLocalRole() != ROLE_Authority)
 		return;
 
+	if (GetWorld()->GetTimerManager().IsTimerActive(ExplosionDelay_TimeHandler))
+		return;
+
 	if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(GetComponentByClass(UStaticMeshComponent::StaticClass())))
 	{
 		ExplosionDynamicMaterial = StaticMeshComp->CreateDynamicMaterialInstance(0, ExploadingMaterialInstance);
-
-		if (GetWorld()->GetTimerManager().IsTimerActive(ExplosionDelay_TimeHandler))
-			GetWorld()->GetTimerManager().ClearTimer(ExplosionDelay_TimeHandler);
 
 		ExplosionSpeedParameterValue = 0;
 		GetWorld()->GetTimerManager().SetTimer(ExplosionDelay_TimeHandler, this, &AFPSMultiplayerProjectile::Expload, AnimationExplosionTime, true);
@@ -205,7 +204,7 @@ void AFPSMultiplayerProjectile::Expload()
 	TArray<AActor*> IgnoreActors;
 	UGameplayStatics::ApplyRadialDamage(GetWorld(), Damage, GetActorLocation(), DamageRadius, DamageType, IgnoreActors);
 
-	DrawDebugSphere(GetWorld(), GetActorLocation(), DamageRadius, 100, FColor::Red, true, 20);
+	//DrawDebugSphere(GetWorld(), GetActorLocation(), DamageRadius, 100, FColor::Red, true, 20);
 
 	bIsExploaded = true;
 	OnRep_bIsExploaded();

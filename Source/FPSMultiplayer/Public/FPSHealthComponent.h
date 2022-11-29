@@ -37,4 +37,8 @@ public:
 
 	float GetMaxHealth() { return MaxHealth; }
 	float GetCurrentHealth() { return Health; }
+
+	void AddHealth(float Amount);
+
+	void ResetHealthComp();
 };

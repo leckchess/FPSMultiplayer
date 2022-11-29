@@ -6,7 +6,6 @@
 
 void UFPSHealthIndicator::OnHealthUpdated(float Health, float MaxHealth)
 {
-	UE_LOG(LogTemp, Log, TEXT("Current Health %f UI"), Health);
 
 	if (HealthImage)
 	{

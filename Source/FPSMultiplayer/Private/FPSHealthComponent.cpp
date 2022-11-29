@@ -15,15 +15,7 @@ void UFPSHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (AActor* MyOwner = GetOwner())
-	{
-		if (GetOwnerRole() == ROLE_Authority)
-		{
-			MyOwner->OnTakeAnyDamage.AddDynamic(this, &UFPSHealthComponent::HandleTakeAnyDamage);
-		}
-	}
-
-	Health = MaxHealth;
+	ResetHealthComp();
 }
 
 void UFPSHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
@@ -35,6 +27,25 @@ void UFPSHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage
 
 	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
 	OnHealthChanged.Broadcast(this, Health, Damage, DamageType, InstigatedBy, DamageCauser);
+}
+
+void UFPSHealthComponent::AddHealth(float Amount)
+{
+	Health += Amount;
+	Health = FMath::Clamp(Health, 0.0f, MaxHealth);
+}
+
+void UFPSHealthComponent::ResetHealthComp()
+{
+	if (AActor* MyOwner = GetOwner())
+	{
+		if (GetOwnerRole() == ROLE_Authority)
+		{
+			MyOwner->OnTakeAnyDamage.AddDynamic(this, &UFPSHealthComponent::HandleTakeAnyDamage);
+		}
+	}
+
+	Health = MaxHealth;
 }
 
 void UFPSHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

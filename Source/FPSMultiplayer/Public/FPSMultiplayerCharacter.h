@@ -23,19 +23,16 @@ class AFPSMultiplayerCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-		/** Pawn mesh: 1st person view (arms; seen only by self) */
-		UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-		USkeletalMeshComponent* FPSMesh;
-
-	USkeletalMeshComponent* CurrentMesh;
-
-	/** First person camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+		/** First person camera */
+		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		UCameraComponent* FirstPersonCameraComponent;
 
 	UFPSHUD* HUD;
-
 	AFPSMultiplayerProjectile* CurrentOverlappedProjectile;
+
+	FTimerHandle RegainHealth_TimeHandler;
+
+	void RegainHealth();
 
 public:
 	AFPSMultiplayerCharacter();
@@ -82,6 +79,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
 		UFPSHealthComponent* PlayerHealthComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Health")
+		float RegainHealthColldown;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 		TSubclassOf<AFPSWeapon> WeaponClass;
@@ -131,6 +131,8 @@ protected:
 	};
 	void BeginTouch(const ETouchIndex::Type FingerIndex, const FVector Location);
 	void EndTouch(const ETouchIndex::Type FingerIndex, const FVector Location);
+
+	void Respawn();
 	TouchData	TouchItem;
 
 protected:
@@ -147,14 +149,13 @@ protected:
 	bool EnableTouchscreenMovement(UInputComponent* InputComponent);
 
 	UFUNCTION()
-	void OnRep_CurrentWeapon();
+		void OnRep_CurrentWeapon();
 
-	UFUNCTION(Client,Reliable)
-	void UpdateHUD();
+	UFUNCTION(Client, Reliable)
+		void UpdateHUD();
 
 public:
-	/** Returns FPSMesh subobject **/
-	USkeletalMeshComponent* GetFPSMesh() const { return FPSMesh; }
+
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
@@ -162,6 +163,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 		void SetHUD(UFPSHUD* InHUD);
+
+	UFUNCTION()
+		void OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
 
 	void SetCurrentOverlappedProjectile(AFPSMultiplayerProjectile* InProjectile) { CurrentOverlappedProjectile = InProjectile; }
 	AFPSMultiplayerProjectile* GetCurrentOverlappedProjectile() { return CurrentOverlappedProjectile; }
@@ -171,7 +176,5 @@ public:
 	AFPSWeapon* GetCurrentWeapon() { return CurrentWeapon; }
 	UFPSHealthComponent* GetHealthComponent() { return PlayerHealthComponent; }
 
-	UFUNCTION()
-		void OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 };
 

@@ -9,6 +9,7 @@
 class UFPSHealthIndicator;
 class AFPSWeapon;
 class UTextBlock;
+class UProgressBar;
 
 UCLASS()
 class FPSMULTIPLAYER_API UFPSHUD : public UUserWidget
@@ -21,7 +22,13 @@ public:
 		UTextBlock* AmmoCount_Text;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+		UTextBlock* Warning_Text;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 		UFPSHealthIndicator* HealthIndicator_WBP;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+		UProgressBar* HP_Bar;
 
 	void Init();
 	void OnHealthUpdated(float Health, float MaxHealth);

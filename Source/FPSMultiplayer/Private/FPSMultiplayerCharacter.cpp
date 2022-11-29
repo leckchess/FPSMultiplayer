@@ -10,6 +10,7 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/GameModeBase.h"
 #include "MotionControllerComponent.h"
 #include "XRMotionControllerBase.h" // for FXRMotionControllerBase::RightHandSourceId
 #include "FPSWeapon.h"
@@ -30,6 +31,8 @@ AFPSMultiplayerCharacter::AFPSMultiplayerCharacter()
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
+
+	RegainHealthColldown = 1;
 	 
 	bIsDead = false;
 
@@ -63,8 +66,6 @@ void AFPSMultiplayerCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
-
-	CurrentMesh = GetMesh();
 	
 	if (GetLocalRole() == ROLE_Authority && WeaponClass)
 	{
@@ -75,7 +76,7 @@ void AFPSMultiplayerCharacter::BeginPlay()
 		if (CurrentWeapon)
 		{
 			CurrentWeapon->SetOwner(this);
-			CurrentWeapon->AttachToComponent(CurrentMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
+			CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
 		}
 
 		if (GetHUD())
@@ -84,7 +85,7 @@ void AFPSMultiplayerCharacter::BeginPlay()
 	
 	if (IsLocallyControlled())
 	{
-		CurrentMesh->HideBoneByName("neck_01", EPhysBodyOp::PBO_None);
+		GetMesh()->HideBoneByName("neck_01", EPhysBodyOp::PBO_None);
 	}
 }
 
@@ -125,19 +126,19 @@ void AFPSMultiplayerCharacter::SetupPlayerInputComponent(class UInputComponent* 
 
 void AFPSMultiplayerCharacter::OnFire()
 {
-	if (CurrentWeapon)
+	if (bIsDead || !CurrentWeapon)
+		return;
+
+	CurrentWeapon->Fire();
+
+	if (APlayerController* PlayerConroller = Cast<APlayerController>(GetController()))
 	{
-		CurrentWeapon->Fire();
+		PlayerConroller->ClientStartCameraShake(FireCameraShake);
+	}
 
-		if (APlayerController* PlayerConroller = Cast<APlayerController>(GetController()))
-		{
-			PlayerConroller->ClientStartCameraShake(FireCameraShake);
-		}
-
-		if (FireSound != nullptr)
-		{
-			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-		}
+	if (FireSound != nullptr)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
 	}
 
 	// TODO play character fire animation
@@ -264,9 +265,7 @@ void AFPSMultiplayerCharacter::OnPlayerHealthChanged(UFPSHealthComponent* Health
 	if (GetLocalRole() != ROLE_Authority)
 		return;
 
-	UpdateHUD_Implementation();
-	UpdateHUD();
-
+	
 	if (Health <= 0 && !bIsDead)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Current Health %f DEAAD"), Health);
@@ -274,18 +273,59 @@ void AFPSMultiplayerCharacter::OnPlayerHealthChanged(UFPSHealthComponent* Health
 		bIsDead = true;
 
 		if (GetCharacterMovement())
-			GetCharacterMovement()->StopMovementImmediately();
+			GetCharacterMovement()->StopActiveMovement();
 
 		if (GetCapsuleComponent())
 			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-		DetachFromControllerPendingDestroy();
+		FTimerHandle Respawn_TimeHandler;
+		GetWorld()->GetTimerManager().SetTimer(Respawn_TimeHandler, this, &AFPSMultiplayerCharacter::Respawn, 5, true);
 
-		SetLifeSpan(10.0f);
-		CurrentWeapon->SetLifeSpan(10.0f);
-
-		// respawn
+		if (GetWorld()->GetTimerManager().IsTimerActive(RegainHealth_TimeHandler))
+			GetWorld()->GetTimerManager().ClearTimer(RegainHealth_TimeHandler);
 	}
+	else
+	{
+		if (GetWorld()->GetTimerManager().IsTimerActive(RegainHealth_TimeHandler))
+			GetWorld()->GetTimerManager().ClearTimer(RegainHealth_TimeHandler);
+
+		GetWorld()->GetTimerManager().SetTimer(RegainHealth_TimeHandler, this, &AFPSMultiplayerCharacter::RegainHealth, RegainHealthColldown, true);
+	}
+
+	UpdateHUD_Implementation();
+	UpdateHUD();
+
+}
+
+void AFPSMultiplayerCharacter::Respawn()
+{
+	if (GetLocalRole() != ROLE_Authority)
+		return;
+
+	if (GetWorld() && GetWorld()->GetAuthGameMode() && GetController())
+	{
+		GetWorld()->GetAuthGameMode()->RestartPlayer(GetController());
+
+		if (PlayerHealthComponent)
+			PlayerHealthComponent->ResetHealthComp();
+
+		if (GetCapsuleComponent())
+			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+		bIsDead = false;
+
+		UpdateHUD_Implementation();
+		UpdateHUD();
+	}
+}
+
+void AFPSMultiplayerCharacter::RegainHealth()
+{
+	GetHealthComponent()->AddHealth(10);
+	GetWorld()->GetTimerManager().SetTimer(RegainHealth_TimeHandler, this, &AFPSMultiplayerCharacter::RegainHealth, RegainHealthColldown, true);
+
+	UpdateHUD_Implementation();
+	UpdateHUD();
 }
 
 void AFPSMultiplayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
