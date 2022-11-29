@@ -8,7 +8,6 @@
 UFPSHealthComponent::UFPSHealthComponent()
 {
 	MaxHealth = 100;
-	//SetIsReplicated(true);
 }
 
 // Called when the game starts
@@ -18,7 +17,7 @@ void UFPSHealthComponent::BeginPlay()
 
 	if (AActor* MyOwner = GetOwner())
 	{
-		//if (GetOwnerRole() == ROLE_Authority)
+		if (GetOwnerRole() == ROLE_Authority)
 		{
 			MyOwner->OnTakeAnyDamage.AddDynamic(this, &UFPSHealthComponent::HandleTakeAnyDamage);
 		}
@@ -38,10 +37,10 @@ void UFPSHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage
 	OnHealthChanged.Broadcast(this, Health, Damage, DamageType, InstigatedBy, DamageCauser);
 }
 
-//void UFPSHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-//{
-//	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-//	DOREPLIFETIME(UFPSHealthComponent, Health);
-//}
+void UFPSHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UFPSHealthComponent, Health);
+}
 
 

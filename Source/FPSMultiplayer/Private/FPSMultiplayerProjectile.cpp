@@ -10,6 +10,9 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/TextRenderComponent.h"
 #include "FPSMultiplayerCharacter.h"
+#include "Net/UnrealNetwork.h"
+#include "DrawDebugHelpers.h"
+#include "PhysicsEngine/RadialForceComponent.h"
 
 AFPSMultiplayerProjectile::AFPSMultiplayerProjectile()
 {
@@ -29,6 +32,15 @@ AFPSMultiplayerProjectile::AFPSMultiplayerProjectile()
 	OverlayBox->OnComponentEndOverlap.AddDynamic(this, &AFPSMultiplayerProjectile::OnEndOverlap);
 	OverlayBox->AttachToComponent(CollisionComp, FAttachmentTransformRules::KeepRelativeTransform);
 
+
+	RadialForceComp = CreateDefaultSubobject<URadialForceComponent>(TEXT("RadialForceComp"));
+	RadialForceComp->SetupAttachment(CollisionComp);
+	RadialForceComp->Radius = DamageRadius;
+	RadialForceComp->DestructibleDamage = Damage;
+	RadialForceComp->bImpulseVelChange = true;
+	RadialForceComp->bAutoActivate = false;
+	RadialForceComp->bIgnoreOwningActor = false;
+
 	// Set as root component
 	RootComponent = CollisionComp;
 
@@ -43,10 +55,11 @@ AFPSMultiplayerProjectile::AFPSMultiplayerProjectile()
 	AnimationExplosionTime = 3;
 	PlayerExplosionTime = 4;
 	DefaultExplosionTime = 8;
+	bIsExploaded = false;
 
 	ExplosionSpeedParameterName = "Frequency";
 	// Die after 3 seconds by default
-	InitialLifeSpan = 3.0f;
+	InitialLifeSpan = 10.0f;
 
 	SetReplicates(true);
 }
@@ -55,7 +68,7 @@ void AFPSMultiplayerProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (GetWorld())
+	if (GetWorld() && GetLocalRole() == ROLE_Authority)
 	{
 		GetWorld()->GetTimerManager().SetTimer(ExplosionAnimationDelay_TimeHandler, this, &AFPSMultiplayerProjectile::Blink, DefaultExplosionTime - AnimationExplosionTime, true);
 	}
@@ -63,7 +76,9 @@ void AFPSMultiplayerProjectile::BeginPlay()
 
 void AFPSMultiplayerProjectile::Tick(float DeltaTime)
 {
-	if (ExplosionDynamicMaterial && GetWorld()->GetTimerManager().IsTimerActive(ExplosionDelay_TimeHandler))
+	Super::Tick(DeltaTime);
+
+	if (ExplosionDynamicMaterial && GetLocalRole() == ROLE_Authority)
 	{
 		ExplosionSpeedParameterValue += (DeltaTime / AnimationExplosionTime);
 		ExplosionDynamicMaterial->SetScalarParameterValue(ExplosionSpeedParameterName, ExplosionSpeedParameterValue);
@@ -83,12 +98,16 @@ void AFPSMultiplayerProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* Othe
 			if (AFPSMultiplayerCharacter* Player = Cast<AFPSMultiplayerCharacter>(OtherActor))
 			{
 				OverlayBox->DestroyComponent();
+				GetProjectileMovement()->bShouldBounce = false;
+				AttachToActor(Player, FAttachmentTransformRules::KeepWorldTransform);
 
-				// attach to player and disable interaction
-				if (GetWorld()->GetTimerManager().IsTimerActive(ExplosionAnimationDelay_TimeHandler) && GetWorld()->GetTimerManager().GetTimerRemaining(ExplosionAnimationDelay_TimeHandler) > PlayerExplosionTime)
+				if (GetLocalRole() == ROLE_Authority)
 				{
-					GetWorld()->GetTimerManager().ClearTimer(ExplosionAnimationDelay_TimeHandler);
-					GetWorld()->GetTimerManager().SetTimer(ExplosionAnimationDelay_TimeHandler, this, &AFPSMultiplayerProjectile::Blink, PlayerExplosionTime - AnimationExplosionTime, true);
+					if (GetWorld()->GetTimerManager().IsTimerActive(ExplosionAnimationDelay_TimeHandler) && GetWorld()->GetTimerManager().GetTimerRemaining(ExplosionAnimationDelay_TimeHandler) > PlayerExplosionTime)
+					{
+						GetWorld()->GetTimerManager().ClearTimer(ExplosionAnimationDelay_TimeHandler);
+						GetWorld()->GetTimerManager().SetTimer(ExplosionAnimationDelay_TimeHandler, this, &AFPSMultiplayerProjectile::Blink, PlayerExplosionTime - AnimationExplosionTime, true);
+					}
 				}
 			}
 		}
@@ -104,6 +123,7 @@ void AFPSMultiplayerProjectile::OnBeginOverlap(UPrimitiveComponent* OverlappedCo
 			if (!Player->GetCurrentOverlappedProjectile())
 			{
 				Player->SetCurrentOverlappedProjectile(this);
+				//SetOwner(Player);
 
 				if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(GetComponentByClass(UTextRenderComponent::StaticClass())))
 				{
@@ -139,8 +159,30 @@ void AFPSMultiplayerProjectile::OnEndOverlap(UPrimitiveComponent* OverlappedComp
 	}
 }
 
+void AFPSMultiplayerProjectile::ServerPickUp_Implementation()
+{
+	if (GetWorld())
+	{
+		if (GetWorld()->GetTimerManager().IsTimerActive(ExplosionAnimationDelay_TimeHandler))
+			GetWorld()->GetTimerManager().ClearTimer(ExplosionAnimationDelay_TimeHandler);
+
+		if (GetWorld()->GetTimerManager().IsTimerActive(ExplosionDelay_TimeHandler))
+			GetWorld()->GetTimerManager().ClearTimer(ExplosionDelay_TimeHandler);
+
+		Destroy();
+	}
+}
+
+bool AFPSMultiplayerProjectile::ServerPickUp_Validate()
+{
+	return true;
+}
+
 void AFPSMultiplayerProjectile::Blink()
 {
+	if (GetLocalRole() != ROLE_Authority)
+		return;
+
 	if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(GetComponentByClass(UStaticMeshComponent::StaticClass())))
 	{
 		ExplosionDynamicMaterial = StaticMeshComp->CreateDynamicMaterialInstance(0, ExploadingMaterialInstance);
@@ -155,26 +197,54 @@ void AFPSMultiplayerProjectile::Blink()
 
 void AFPSMultiplayerProjectile::Expload()
 {
-	TArray<AActor*> IgnoreActors;
-	IgnoreActors.Add(GetOwner());
+	if (GetLocalRole() != ROLE_Authority)
+		return;
 
+	RadialForceComp->FireImpulse();
+
+	TArray<AActor*> IgnoreActors;
 	UGameplayStatics::ApplyRadialDamage(GetWorld(), Damage, GetActorLocation(), DamageRadius, DamageType, IgnoreActors);
 
+	DrawDebugSphere(GetWorld(), GetActorLocation(), DamageRadius, 100, FColor::Red, true, 20);
+
+	bIsExploaded = true;
+	OnRep_bIsExploaded();
+
+	SetHidden(true);
+	SetLifeSpan(0.02f);
+}
+
+void AFPSMultiplayerProjectile::PlayExplosionEffect()
+{
 	if (ExplosionEffect)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation(), GetActorRotation());
 	}
-
-	Destroy();
 }
 
-void AFPSMultiplayerProjectile::PickUp()
+void AFPSMultiplayerProjectile::OnRep_ExplosionSpeedParameterValue()
 {
-	if (GetWorld())
+	if (ExplosionSpeedParameterValue > 0)
 	{
-		GetWorld()->GetTimerManager().ClearTimer(ExplosionAnimationDelay_TimeHandler);
-		GetWorld()->GetTimerManager().ClearTimer(ExplosionDelay_TimeHandler);
+		if (!ExplosionDynamicMaterial)
+		{
+			if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(GetComponentByClass(UStaticMeshComponent::StaticClass())))
+				ExplosionDynamicMaterial = StaticMeshComp->CreateDynamicMaterialInstance(0, ExploadingMaterialInstance);
+		}
 
-		Destroy();
+		ExplosionDynamicMaterial->SetScalarParameterValue(ExplosionSpeedParameterName, ExplosionSpeedParameterValue);
 	}
+}
+
+void AFPSMultiplayerProjectile::OnRep_bIsExploaded()
+{
+	if (bIsExploaded)
+		PlayExplosionEffect();
+}
+
+void AFPSMultiplayerProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AFPSMultiplayerProjectile, ExplosionSpeedParameterValue);
+	DOREPLIFETIME(AFPSMultiplayerProjectile, bIsExploaded);
 }

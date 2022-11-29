@@ -30,6 +30,8 @@ AFPSMultiplayerCharacter::AFPSMultiplayerCharacter()
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
+	 
+	bIsDead = false;
 
 	WeaponSocketName = "GripPoint";
 
@@ -41,6 +43,8 @@ AFPSMultiplayerCharacter::AFPSMultiplayerCharacter()
 
 	PlayerHealthComponent = CreateDefaultSubobject<UFPSHealthComponent>(TEXT("PlayerHealthComp"));
 	PlayerHealthComponent->OnHealthChanged.AddDynamic(this, &AFPSMultiplayerCharacter::OnPlayerHealthChanged);
+
+	PlayerHealthComponent->SetIsReplicated(true);
 
 	// Default offset from the character location for projectiles to spawn
 	GunOffset = FVector(100.0f, 0.0f, 10.0f);
@@ -141,12 +145,16 @@ void AFPSMultiplayerCharacter::OnFire()
 
 void AFPSMultiplayerCharacter::Interact()
 {
+	if (!IsLocallyControlled())
+		return;
+
 	if (CurrentOverlappedProjectile)
 	{
 		if (CurrentWeapon)
 		{
+			CurrentOverlappedProjectile->SetOwner(this);
 			CurrentWeapon->ServerAddAmmo();
-			CurrentOverlappedProjectile->PickUp();
+			CurrentOverlappedProjectile->ServerPickUp();
 		}
 	}
 }
@@ -237,6 +245,14 @@ void AFPSMultiplayerCharacter::OnRep_CurrentWeapon()
 		HUD->Init();
 }
 
+void AFPSMultiplayerCharacter::UpdateHUD_Implementation()
+{
+	if (!HUD || !IsLocallyControlled() || !GetHealthComponent())
+		return;
+
+	HUD->OnHealthUpdated(GetHealthComponent()->GetCurrentHealth(), GetHealthComponent()->GetMaxHealth());
+}
+
 void AFPSMultiplayerCharacter::SetHUD(UFPSHUD* InHUD)
 {
 	if (InHUD)
@@ -245,13 +261,12 @@ void AFPSMultiplayerCharacter::SetHUD(UFPSHUD* InHUD)
 
 void AFPSMultiplayerCharacter::OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
-	if (HUD && HealthComp)
-	{
-		// call client function
-		HUD->OnHealthUpdated(Health, HealthComp->GetMaxHealth());
-	}
+	if (GetLocalRole() != ROLE_Authority)
+		return;
 
-	// respawn after a while
+	UpdateHUD_Implementation();
+	UpdateHUD();
+
 	if (Health <= 0 && !bIsDead)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Current Health %f DEAAD"), Health);
@@ -267,6 +282,9 @@ void AFPSMultiplayerCharacter::OnPlayerHealthChanged(UFPSHealthComponent* Health
 		DetachFromControllerPendingDestroy();
 
 		SetLifeSpan(10.0f);
+		CurrentWeapon->SetLifeSpan(10.0f);
+
+		// respawn
 	}
 }
 
@@ -274,4 +292,5 @@ void AFPSMultiplayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AFPSMultiplayerCharacter, CurrentWeapon);
+	DOREPLIFETIME(AFPSMultiplayerCharacter, bIsDead);
 }

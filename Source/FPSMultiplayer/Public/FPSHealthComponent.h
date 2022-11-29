@@ -21,10 +21,10 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	//UPROPERTY(Replicated, BlueprintReadOnly, Category = "Health")
+	UPROPERTY(Replicated)
 		float Health;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Health")
+	UPROPERTY(EditDefaultsOnly)
 		float MaxHealth;
 
 
@@ -36,6 +36,5 @@ public:
 	FOnHealthChangedSignature OnHealthChanged;
 
 	float GetMaxHealth() { return MaxHealth; }
-
-	void ttfunc();
+	float GetCurrentHealth() { return Health; }
 };

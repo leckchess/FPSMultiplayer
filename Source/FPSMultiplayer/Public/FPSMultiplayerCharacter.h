@@ -92,7 +92,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Player")
 		bool bIsFiring;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Player")
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Player")
 		bool bIsDead;
 
 	/** Fires a projectile. */
@@ -149,6 +149,9 @@ protected:
 	UFUNCTION()
 	void OnRep_CurrentWeapon();
 
+	UFUNCTION(Client,Reliable)
+	void UpdateHUD();
+
 public:
 	/** Returns FPSMesh subobject **/
 	USkeletalMeshComponent* GetFPSMesh() const { return FPSMesh; }
@@ -167,7 +170,6 @@ public:
 
 	AFPSWeapon* GetCurrentWeapon() { return CurrentWeapon; }
 	UFPSHealthComponent* GetHealthComponent() { return PlayerHealthComponent; }
-
 
 	UFUNCTION()
 		void OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);

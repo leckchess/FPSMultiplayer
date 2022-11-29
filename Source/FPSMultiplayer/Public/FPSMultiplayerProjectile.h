@@ -14,6 +14,7 @@ class UMaterialInstance;
 class UStaticMeshComponent;
 class UParticleSystem;
 class UDamageType;
+class URadialForceComponent;
 
 UCLASS(config=Game)
 class AFPSMultiplayerProjectile : public AActor
@@ -27,6 +28,9 @@ class AFPSMultiplayerProjectile : public AActor
 	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
 	UBoxComponent* OverlayBox;
 
+	UPROPERTY(VisibleDefaultsOnly, Category = "Explode")
+		URadialForceComponent* RadialForceComp;
+
 	/** Projectile movement component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UProjectileMovementComponent* ProjectileMovement;
@@ -35,12 +39,24 @@ class AFPSMultiplayerProjectile : public AActor
 	FTimerHandle ExplosionDelay_TimeHandler;
 
 	FName ExplosionSpeedParameterName;
-	float ExplosionSpeedParameterValue;
+
+	UPROPERTY(ReplicatedUsing = OnRep_ExplosionSpeedParameterValue)
+		float ExplosionSpeedParameterValue;
+
+	UPROPERTY(ReplicatedUsing = OnRep_bIsExploaded)
+		bool bIsExploaded;
 
 	UMaterialInstanceDynamic* ExplosionDynamicMaterial;
 
 	void Blink();
 	void Expload();
+	void PlayExplosionEffect();
+
+	UFUNCTION()
+	void OnRep_ExplosionSpeedParameterValue();
+
+	UFUNCTION()
+	void OnRep_bIsExploaded();
 
 protected:
 
@@ -60,7 +76,8 @@ public:
 	UFUNCTION()
 	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex);
 	
-	void PickUp();
+	UFUNCTION(Server, Reliable, WithValidation)
+		void ServerPickUp();
 
 	/** Returns CollisionComp subobject **/
 	USphereComponent* GetCollisionComp() const { return CollisionComp; }
