@@ -17,6 +17,7 @@
 #include "FPSHUD.h"
 #include "Net/UnrealNetwork.h"
 #include "Components/WidgetComponent.h"
+#include "FPSFloatingHPBar.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -48,8 +49,8 @@ AFPSMultiplayerCharacter::AFPSMultiplayerCharacter()
 
 	OnTakeAnyDamage.AddDynamic(this, &AFPSMultiplayerCharacter::HandleTakeAnyDamage);
 
-	/*HPBar_WidgetComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("HP_BarWidget"));
-	HPBar_WidgetComp->SetupAttachment(GetCapsuleComponent());*/
+	/*FloatingHPBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("HP_BarWidget"));
+	FloatingHPBar->SetupAttachment(GetCapsuleComponent());*/
 
 	// Default offset from the character location for projectiles to spawn
 	GunOffset = FVector(100.0f, 0.0f, 10.0f);
@@ -82,6 +83,8 @@ void AFPSMultiplayerCharacter::BeginPlay()
 		}
 
 		Health = MaxHealth;
+
+		//MulticastUpdateHPFloatingBar();
 
 		if (GetHUD())
 		{
@@ -253,6 +256,18 @@ void AFPSMultiplayerCharacter::OnRep_CurrentWeapon()
 		HUD->Init();
 }
 
+//void AFPSMultiplayerCharacter::MulticastUpdateHPFloatingBar_Implementation()
+//{
+//	if (FloatingHPBar)
+//	{
+//		UFPSFloatingHPBar* Floating_HPWidget = Cast< UFPSFloatingHPBar>(FloatingHPBar->GetUserWidgetObject());
+//		if (Floating_HPWidget)
+//		{
+//			Floating_HPWidget->UpdateHPBar(Health, MaxHealth);
+//		}
+//	}
+//}
+
 void AFPSMultiplayerCharacter::UpdateHUD()
 {
 	if (!HUD)
@@ -345,6 +360,8 @@ void AFPSMultiplayerCharacter::HandleTakeAnyDamage(AActor* DamagedActor, float D
 
 		GetWorld()->GetTimerManager().SetTimer(RegainHealth_TimeHandler, this, &AFPSMultiplayerCharacter::RegainHealth, RegainHealthColldown, true);
 	}
+
+	//MulticastUpdateHPFloatingBar();
 
 	UpdateHUD();
 }

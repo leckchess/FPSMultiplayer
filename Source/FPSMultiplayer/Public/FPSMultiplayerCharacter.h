@@ -17,6 +17,7 @@ class AFPSWeapon;
 class UFPSHUD;
 class AFPSMultiplayerProjectile;
 class UFPSFloatingHPBar;
+class UWidgetComponent;
 
 UCLASS(config = Game)
 class AFPSMultiplayerCharacter : public ACharacter
@@ -90,8 +91,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
 		float MaxHealth;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Health")
-		TSubclassOf<UUserWidget> HPBar_WidgetClass;
+	/*UPROPERTY(EditDefaultsOnly, Category = "Health")
+		UWidgetComponent* FloatingHPBar;*/
 
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
 		float RegainHealthColldown;
@@ -163,6 +164,9 @@ protected:
 
 	UFUNCTION()
 		void OnRep_CurrentWeapon();
+
+	/*UFUNCTION(NetMulticast,Reliable)
+	 void MulticastUpdateHPFloatingBar();*/
 
 	void UpdateHUD();
 
