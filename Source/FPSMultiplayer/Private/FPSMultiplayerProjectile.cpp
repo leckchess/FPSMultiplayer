@@ -12,7 +12,6 @@
 #include "FPSMultiplayerCharacter.h"
 #include "Net/UnrealNetwork.h"
 #include "DrawDebugHelpers.h"
-#include "PhysicsEngine/RadialForceComponent.h"
 
 AFPSMultiplayerProjectile::AFPSMultiplayerProjectile()
 {
@@ -31,15 +30,6 @@ AFPSMultiplayerProjectile::AFPSMultiplayerProjectile()
 	OverlayBox->OnComponentBeginOverlap.AddDynamic(this, &AFPSMultiplayerProjectile::OnBeginOverlap);
 	OverlayBox->OnComponentEndOverlap.AddDynamic(this, &AFPSMultiplayerProjectile::OnEndOverlap);
 	OverlayBox->AttachToComponent(CollisionComp, FAttachmentTransformRules::KeepRelativeTransform);
-
-
-	RadialForceComp = CreateDefaultSubobject<URadialForceComponent>(TEXT("RadialForceComp"));
-	RadialForceComp->SetupAttachment(CollisionComp);
-	RadialForceComp->Radius = DamageRadius;
-	RadialForceComp->DestructibleDamage = Damage;
-	RadialForceComp->bImpulseVelChange = true;
-	RadialForceComp->bAutoActivate = false;
-	RadialForceComp->bIgnoreOwningActor = false;
 
 	// Set as root component
 	RootComponent = CollisionComp;
@@ -199,10 +189,10 @@ void AFPSMultiplayerProjectile::Expload()
 	if (GetLocalRole() != ROLE_Authority)
 		return;
 
-	RadialForceComp->FireImpulse();
-
 	TArray<AActor*> IgnoreActors;
-	UGameplayStatics::ApplyRadialDamage(GetWorld(), Damage, GetActorLocation(), DamageRadius, DamageType, IgnoreActors);
+	IgnoreActors.Add(this);
+
+	UGameplayStatics::ApplyRadialDamage(GetWorld(), Damage, GetActorLocation(), DamageRadius, DamageType, IgnoreActors, GetOwner(), GetOwner()->GetInstigatorController(), true);
 
 	//DrawDebugSphere(GetWorld(), GetActorLocation(), DamageRadius, 100, FColor::Red, true, 20);
 
@@ -210,7 +200,7 @@ void AFPSMultiplayerProjectile::Expload()
 	OnRep_bIsExploaded();
 
 	SetHidden(true);
-	SetLifeSpan(0.02f);
+	SetLifeSpan(0.05f);
 }
 
 void AFPSMultiplayerProjectile::PlayExplosionEffect()

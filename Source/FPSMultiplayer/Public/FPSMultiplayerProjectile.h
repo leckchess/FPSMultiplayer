@@ -14,7 +14,6 @@ class UMaterialInstance;
 class UStaticMeshComponent;
 class UParticleSystem;
 class UDamageType;
-class URadialForceComponent;
 
 UCLASS(config=Game)
 class AFPSMultiplayerProjectile : public AActor
@@ -27,9 +26,6 @@ class AFPSMultiplayerProjectile : public AActor
 
 	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
 	UBoxComponent* OverlayBox;
-
-	UPROPERTY(VisibleDefaultsOnly, Category = "Explode")
-		URadialForceComponent* RadialForceComp;
 
 	/** Projectile movement component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))

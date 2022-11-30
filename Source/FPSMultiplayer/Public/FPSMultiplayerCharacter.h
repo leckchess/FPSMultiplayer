@@ -14,11 +14,9 @@ class UMotionControllerComponent;
 class UAnimMontage;
 class USoundBase;
 class AFPSWeapon;
-class UFPSHealthComponent;
 class UFPSHUD;
 class AFPSMultiplayerProjectile;
 class UFPSFloatingHPBar;
-class UWidgetComponent;
 
 UCLASS(config = Game)
 class AFPSMultiplayerCharacter : public ACharacter
@@ -37,11 +35,20 @@ class AFPSMultiplayerCharacter : public ACharacter
 
 	void RegainHealth();
 
+	UPROPERTY(ReplicatedUsing = OnRep_Health)
+	float Health;
+
+	UFUNCTION()
+		void OnRep_Health();
+
 public:
 	AFPSMultiplayerCharacter();
 
 protected:
 	virtual void BeginPlay();
+
+	UFUNCTION()
+		void HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
 public:
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
@@ -81,13 +88,10 @@ protected:
 		AFPSWeapon* CurrentWeapon;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
-		UFPSHealthComponent* PlayerHealthComponent;
+		float MaxHealth;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
 		TSubclassOf<UUserWidget> HPBar_WidgetClass;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Health")
-		UWidgetComponent* HPBar_WidgetComp;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
 		float RegainHealthColldown;
@@ -160,8 +164,7 @@ protected:
 	UFUNCTION()
 		void OnRep_CurrentWeapon();
 
-	UFUNCTION(Client, Reliable)
-		void UpdateHUD();
+	void UpdateHUD();
 
 public:
 
@@ -174,8 +177,7 @@ public:
 		void SetHUD(UFPSHUD* InHUD);
 
 	UFUNCTION()
-		void OnPlayerHealthChanged(UFPSHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
-
+		void OnDeath();
 
 	void SetCurrentOverlappedProjectile(AFPSMultiplayerProjectile* InProjectile) { CurrentOverlappedProjectile = InProjectile; }
 	AFPSMultiplayerProjectile* GetCurrentOverlappedProjectile() { return CurrentOverlappedProjectile; }
@@ -183,6 +185,5 @@ public:
 	bool IsDead() { return bIsDead; }
 
 	AFPSWeapon* GetCurrentWeapon() { return CurrentWeapon; }
-	UFPSHealthComponent* GetHealthComponent() { return PlayerHealthComponent; }
 };
 
