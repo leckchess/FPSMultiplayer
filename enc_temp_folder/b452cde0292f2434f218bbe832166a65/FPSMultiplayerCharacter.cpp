@@ -146,11 +146,6 @@ void AFPSMultiplayerCharacter::OnFire()
 		PlayerConroller->ClientStartCameraShake(FireCameraShake);
 	}
 
-	if (FireAnimation)
-	{
-		GetMesh()->PlayAnimation(FireAnimation, false);
-	}
-
 	// TODO play character fire animation
 }
 

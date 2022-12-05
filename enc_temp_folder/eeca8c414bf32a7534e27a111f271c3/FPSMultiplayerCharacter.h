@@ -99,6 +99,9 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, Category = "Weapon")
 		FName WeaponSocketName;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Player")
+		bool bIsFiring;
+
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Player")
 		bool bIsDead;
 

@@ -44,6 +44,8 @@ class AFPSMultiplayerProjectile : public AActor
 
 	UMaterialInstanceDynamic* ExplosionDynamicMaterial;
 
+	bool bCanInteract;
+
 	void Blink();
 	void Expload();
 	void PlayExplosionEffect();

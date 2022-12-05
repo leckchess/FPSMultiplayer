@@ -47,6 +47,8 @@ AFPSMultiplayerProjectile::AFPSMultiplayerProjectile()
 	DefaultExplosionTime = 8;
 	bIsExploaded = false;
 
+	bCanInteract = false;
+
 	ExplosionSpeedParameterName = "Frequency";
 	// Die after 3 seconds by default
 	InitialLifeSpan = 10.0f;
@@ -81,6 +83,8 @@ void AFPSMultiplayerProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* Othe
 	// Only add impulse and destroy projectile if we hit a physics
 	if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr))
 	{
+		bCanInteract = true;
+
 		if (OtherComp->IsSimulatingPhysics())
 			OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
 		else if (GetWorld() && OtherActor != GetOwner())
@@ -106,7 +110,7 @@ void AFPSMultiplayerProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* Othe
 
 void AFPSMultiplayerProjectile::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit)
 {
-	if (OtherActor && OtherActor != this && OtherComponent != nullptr)
+	if (OtherActor && OtherActor != this && OtherComponent != nullptr && bCanInteract)
 	{
 		if (AFPSMultiplayerCharacter* Player = Cast<AFPSMultiplayerCharacter>(OtherActor))
 		{

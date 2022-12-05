@@ -47,13 +47,18 @@ bool AFPSWeapon::ServerAddAmmo_Validate()
 
 void AFPSWeapon::Fire()
 {
+	if (FireSound != nullptr)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+	}
+
 	if (GetLocalRole() < ROLE_Authority)
 	{
 		ServerFire();
 		return;
 	}
 
-	if (GetWorld() && GetOwner() && CurrentAmmoInClip > 0)
+	if (GetWorld() && GetOwner())
 	{
 		AActor* MyOwner = GetOwner();
 
@@ -75,6 +80,11 @@ void AFPSWeapon::Fire()
 		CurrentAmmoInClip--;
 		OnAmmoChanged.Broadcast(this, CurrentAmmoInClip);
 	}
+}
+
+bool AFPSWeapon::CanFire()
+{
+	return CurrentAmmoInClip > 0;
 }
 
 void AFPSWeapon::OnRep_CurrentAmmoInClip()

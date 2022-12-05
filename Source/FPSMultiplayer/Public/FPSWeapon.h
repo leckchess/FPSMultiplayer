@@ -55,12 +55,18 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
 		TSubclassOf<AActor> ProjectileClass;
 
+	/** Sound to play each time we fire */
+	UPROPERTY(EditDefaultsOnly, Category = Gameplay)
+		USoundBase* FireSound;
+
 	UFUNCTION(Server, Reliable, WithValidation)
 		void ServerFire();
 
 public:
 
 	void Fire();
+
+	bool CanFire();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 		void ServerAddAmmo();
